@@ -133,6 +133,9 @@ public class QuorumPeerMain {
             config.getPurgeInterval());
         purgeMgr.start();
 
+        // If provide a config file and specify running in quorum mode,
+        // run zookeeper server in quorum mode.
+        // Else, run in standalone mode.
         if (args.length == 1 && config.isDistributed()) {
             runFromConfig(config);
         } else {
@@ -179,7 +182,12 @@ public class QuorumPeerMain {
             }
 
             quorumPeer = getQuorumPeer();
+
+            // Set manager for snapshot and transaction log files.
+            // Note: should always specify 'dataLogDir' and 'dataDir' 
+            // in cfg file,
             quorumPeer.setTxnFactory(new FileTxnSnapLog(config.getDataLogDir(), config.getDataDir()));
+
             quorumPeer.enableLocalSessions(config.areLocalSessionsEnabled());
             quorumPeer.enableLocalSessionsUpgrading(config.isLocalSessionsUpgradingEnabled());
             //quorumPeer.setQuorumPeers(config.getAllMembers());
@@ -194,6 +202,7 @@ public class QuorumPeerMain {
             quorumPeer.setObserverMasterPort(config.getObserverMasterPort());
             quorumPeer.setConfigFileName(config.getConfigFilename());
             quorumPeer.setClientPortListenBacklog(config.getClientPortListenBacklog());
+
             quorumPeer.setZKDatabase(new ZKDatabase(quorumPeer.getTxnFactory()));
             quorumPeer.setQuorumVerifier(config.getQuorumVerifier(), false);
             if (config.getLastSeenQuorumVerifier() != null) {

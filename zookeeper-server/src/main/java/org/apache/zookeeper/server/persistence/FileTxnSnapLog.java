@@ -44,19 +44,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This is a helper class
- * above the implementations
- * of txnlog and snapshot
- * classes
+ * This is a helper class above the implementations of txnlog 
+ * and snapshot classes.
+ * 
+ * The FileTxnSnapLog component manages both the transaction 
+ * and snapshot logs by creating and managing the transaction 
+ * log files, periodically creating and managing the snapshot 
+ * files, and handling the coordination between the transaction 
+ * and snapshot logs.
  */
 public class FileTxnSnapLog {
 
-    //the directory containing the
-    //the transaction logs
+    // The directory containing the transaction logs
     final File dataDir;
-    //the directory containing the
-    //the snapshot directory
+
+    // The directory containing snapshot directory
     final File snapDir;
+
     TxnLog txnLog;
     SnapShot snapLog;
     private final boolean autoCreateDB;
@@ -104,7 +108,7 @@ public class FileTxnSnapLog {
     }
 
     /**
-     * the constructor which takes the datadir and
+     * The constructor which takes the datadir and
      * snapdir.
      * @param dataDir the transaction directory
      * @param snapDir the snapshot directory

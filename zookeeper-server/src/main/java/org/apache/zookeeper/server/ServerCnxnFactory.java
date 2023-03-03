@@ -164,6 +164,11 @@ public abstract class ServerCnxnFactory {
 
     public abstract void closeAll(ServerCnxn.DisconnectReason reason);
 
+    /**
+    * Create an instance of ServerCnxnFactory based on cfg setting.
+    * If provide `serverCnxnFactory=NettyServerCnxnFactory`, would use Netty.
+    * Otherwise, use NIO.
+    */
     public static ServerCnxnFactory createFactory() throws IOException {
         String serverCnxnFactoryName = System.getProperty(ZOOKEEPER_SERVER_CNXN_FACTORY);
         if (serverCnxnFactoryName == null) {
