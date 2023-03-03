@@ -37,20 +37,27 @@ import org.apache.zookeeper.server.auth.SaslServerCallbackHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class ServerCnxnFactory {
 
+// ServerCnxnFactory is used to maintain connections between server 
+// and clients. 
+// This abstract class is implemented by two class: NIOServerCnxnFactory & NettyServerCnxnFactory
+public abstract class ServerCnxnFactory {
+    // Name of the factory.
     public static final String ZOOKEEPER_SERVER_CNXN_FACTORY = "zookeeper.serverCnxnFactory";
+
+    // Number of maximum connections that allowed.
     private static final String ZOOKEEPER_MAX_CONNECTION = "zookeeper.maxCnxns";
+
+    // Default value for managed connections.
     public static final int ZOOKEEPER_MAX_CONNECTION_DEFAULT = 0;
 
+    // Logger.
     private static final Logger LOG = LoggerFactory.getLogger(ServerCnxnFactory.class);
 
     // Tells whether SSL is enabled on this ServerCnxnFactory
     protected boolean secure;
 
-    /**
-     * The buffer will cause the connection to be close when we do a send.
-     */
+    // The buffer will cause the connection to be close when we do a send.
     static final ByteBuffer closeConn = ByteBuffer.allocate(0);
 
     // total number of connections accepted by the ZooKeeper server
