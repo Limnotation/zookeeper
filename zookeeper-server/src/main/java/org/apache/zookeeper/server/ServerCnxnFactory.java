@@ -38,9 +38,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-// ServerCnxnFactory is used to maintain connections between server 
-// and clients. 
-// This abstract class is implemented by two class: NIOServerCnxnFactory & NettyServerCnxnFactory
+// ServerCnxnFactory is used to maintain connections 
+// between server and clients. 
+// This abstract class is implemented by two class: 
+//      NIOServerCnxnFactory 
+//      NettyServerCnxnFactory
 public abstract class ServerCnxnFactory {
     // Name of the factory.
     public static final String ZOOKEEPER_SERVER_CNXN_FACTORY = "zookeeper.serverCnxnFactory";

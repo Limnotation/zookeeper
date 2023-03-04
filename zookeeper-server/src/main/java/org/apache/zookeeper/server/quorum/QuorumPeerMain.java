@@ -168,6 +168,8 @@ public class QuorumPeerMain {
         try {
             ServerMetrics.metricsProviderInitialized(metricsProvider);
             ProviderRegistry.initialize();
+
+            // Connection factory
             ServerCnxnFactory cnxnFactory = null;
             ServerCnxnFactory secureCnxnFactory = null;
 
@@ -203,7 +205,9 @@ public class QuorumPeerMain {
             quorumPeer.setConfigFileName(config.getConfigFilename());
             quorumPeer.setClientPortListenBacklog(config.getClientPortListenBacklog());
 
+            // Set up in-memory database.
             quorumPeer.setZKDatabase(new ZKDatabase(quorumPeer.getTxnFactory()));
+            
             quorumPeer.setQuorumVerifier(config.getQuorumVerifier(), false);
             if (config.getLastSeenQuorumVerifier() != null) {
                 quorumPeer.setLastSeenQuorumVerifier(config.getLastSeenQuorumVerifier(), false);

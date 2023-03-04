@@ -67,6 +67,7 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
 
     /** Default sessionless connection timeout in ms: 10000 (10s) */
     public static final String ZOOKEEPER_NIO_SESSIONLESS_CNXN_TIMEOUT = "zookeeper.nio.sessionlessCnxnTimeout";
+    
     /**
      * With 500 connections to an observer with watchers firing on each, is
      * unable to exceed 1GigE rates with only 1 selector.
@@ -74,10 +75,13 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
      * Expressed as sqrt(numCores/2). Must have at least 1 selector thread.
      */
     public static final String ZOOKEEPER_NIO_NUM_SELECTOR_THREADS = "zookeeper.nio.numSelectorThreads";
+
     /** Default: 2 * numCores */
     public static final String ZOOKEEPER_NIO_NUM_WORKER_THREADS = "zookeeper.nio.numWorkerThreads";
+
     /** Default: 64kB */
     public static final String ZOOKEEPER_NIO_DIRECT_BUFFER_BYTES = "zookeeper.nio.directBufferBytes";
+
     /** Default worker pool shutdown timeout in ms: 5000 (5s) */
     public static final String ZOOKEEPER_NIO_SHUTDOWN_TIMEOUT = "zookeeper.nio.shutdownTimeout";
 
@@ -158,11 +162,14 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
      * descriptors by briefly sleeping before retrying.
      */
     private class AcceptThread extends AbstractSelectThread {
-
         private final ServerSocketChannel acceptSocket;
         private final SelectionKey acceptKey;
         private final RateLogger acceptErrorLogger = new RateLogger(LOG);
+
+        // Reference to all known selector threads, will spread
+        // new connections to them.
         private final Collection<SelectorThread> selectorThreads;
+        
         private Iterator<SelectorThread> selectorIterator;
         private volatile boolean reconfiguring = false;
 
@@ -257,7 +264,9 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
             boolean accepted = false;
             SocketChannel sc = null;
             try {
+                // Complete a TCP handshake with client.
                 sc = acceptSocket.accept();
+
                 accepted = true;
                 if (limitTotalNumberOfCnxns()) {
                     throw new IOException("Too many connections max allowed is " + maxCnxns);
@@ -414,6 +423,8 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
                         cleanupSelectionKey(key);
                         continue;
                     }
+
+                    // handle read or write events.
                     if (key.isReadable() || key.isWritable()) {
                         handleIO(key);
                     } else {
@@ -436,7 +447,7 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
 
             // Stop selecting this key while processing on its
             // connection
-            cnxn.disableSelectable();
+            cnxn.disableSelectable(); 
             key.interestOps(0);
             touchCnxn(cnxn);
             workerPool.schedule(workRequest);
@@ -537,7 +548,7 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
     }
 
     /**
-     * This thread is responsible for closing stale connections so that
+     * This thread is responsible for closing sta
      * connections on which no session is established are properly expired.
      */
     private class ConnectionExpirerThread extends ZooKeeperThread {
@@ -625,6 +636,7 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
         maxClientCnxns = maxcc;
         initMaxCnxns();
         sessionlessCnxnTimeout = Integer.getInteger(ZOOKEEPER_NIO_SESSIONLESS_CNXN_TIMEOUT, 10000);
+
         // We also use the sessionlessCnxnTimeout as expiring interval for
         // cnxnExpiryQueue. These don't need to be the same, but the expiring
         // interval passed into the ExpiryQueue() constructor below should be
@@ -632,7 +644,9 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
         cnxnExpiryQueue = new ExpiryQueue<>(sessionlessCnxnTimeout);
         expirerThread = new ConnectionExpirerThread();
 
+        // Get the number of cores of the JVM.
         int numCores = Runtime.getRuntime().availableProcessors();
+
         // 32 cores sweet spot seems to be 4 selector threads
         numSelectorThreads = Integer.getInteger(
             ZOOKEEPER_NIO_NUM_SELECTOR_THREADS,
@@ -641,6 +655,7 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
             throw new IOException("numSelectorThreads must be at least 1");
         }
 
+        // 32 cores sweet spot seems to be 64 worker threads.
         numWorkerThreads = Integer.getInteger(ZOOKEEPER_NIO_NUM_WORKER_THREADS, 2 * numCores);
         workerShutdownTimeoutMS = Long.getLong(ZOOKEEPER_NIO_SHUTDOWN_TIMEOUT, 5000);
 
@@ -723,18 +738,29 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
     @Override
     public void start() {
         stopped = false;
+
+        // This function starts all kinds of working threads
+        // from bottom to top.
+
+        // Create worker thread pool and start all threads.
         if (workerPool == null) {
             workerPool = new WorkerService("NIOWorker", numWorkerThreads, false);
         }
+
+        // Start all selector threads. They will select connections
+        // from a queue and pass them to worker threads.
         for (SelectorThread thread : selectorThreads) {
             if (thread.getState() == Thread.State.NEW) {
                 thread.start();
             }
         }
-        // ensure thread is started once and only once
+
+        // Start accept thread to start accepting client connections.
         if (acceptThread.getState() == Thread.State.NEW) {
             acceptThread.start();
         }
+
+        // Start expire thread to monitor and recycle idle threads.
         if (expirerThread.getState() == Thread.State.NEW) {
             expirerThread.start();
         }
