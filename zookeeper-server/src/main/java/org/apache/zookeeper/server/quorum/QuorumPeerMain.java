@@ -133,9 +133,8 @@ public class QuorumPeerMain {
             config.getPurgeInterval());
         purgeMgr.start();
 
-        // If provide a config file and specify running in quorum mode,
-        // run zookeeper server in quorum mode.
-        // Else, run in standalone mode.
+        // If provide a config file and specify running in quorum mode, run zookeeper server in quorum mode.
+        // Else, run zookeeper server in standalone mode.
         if (args.length == 1 && config.isDistributed()) {
             runFromConfig(config);
         } else {
