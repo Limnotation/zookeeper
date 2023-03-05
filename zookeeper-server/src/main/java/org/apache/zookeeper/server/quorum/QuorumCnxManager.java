@@ -100,26 +100,22 @@ public class QuorumCnxManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(QuorumCnxManager.class);
 
-    /*
-     * Maximum capacity of thread queues
-     */
+    // Maximum capacity of thread queues
     static final int RECV_CAPACITY = 100;
-    // Initialized to 1 to prevent sending
-    // stale notifications to peers
+
+    // Initialized to 1 to prevent sending stale notifications to peers
     static final int SEND_CAPACITY = 1;
 
+    // Maximum packet size: 512KB
     static final int PACKETMAXSIZE = 1024 * 512;
 
-    /*
-     * Negative counter for observer server ids.
-     */
-
+    // Negative counter for observer server ids.
     private AtomicLong observerCounter = new AtomicLong(-1);
 
     /*
      * Protocol identifier used among peers (must be a negative number for backward compatibility reasons)
      */
-    // the following protocol version was sent in every connection initiation message since ZOOKEEPER-107 released in 3.5.0
+    // The following protocol version was sent in every connection initiation message since ZOOKEEPER-107 released in 3.5.0
     public static final long PROTOCOL_VERSION_V1 = -65536L;
     // ZOOKEEPER-3188 introduced multiple addresses in the connection initiation message, released in 3.6.0
     public static final long PROTOCOL_VERSION_V2 = -65535L;
@@ -129,18 +125,14 @@ public class QuorumCnxManager {
      */
     public static final int maxBuffer = 2048;
 
-    /*
-     * Connection time out value in milliseconds
-     */
-
+    // Connection time out value in milliseconds
     private int cnxTO = 5000;
 
     final QuorumPeer self;
 
-    /*
-     * Local IP address
-     */
+    // Local IP address
     final long mySid;
+
     final int socketTimeout;
     final Map<Long, QuorumPeer.QuorumServer> view;
     final boolean listenOnAllIPs;
@@ -687,19 +679,13 @@ public class QuorumCnxManager {
      * only leader election uses it.
      */
     public void toSend(Long sid, ByteBuffer b) {
-        /*
-         * If sending message to myself, then simply enqueue it (loopback).
-         */
         if (this.mySid == sid) {
+            // If sending message to myself, then simply enqueue it (loopback).
             b.position(0);
             addToRecvQueue(new Message(b.duplicate(), sid));
-            /*
-             * Otherwise send to the corresponding thread to send.
-             */
         } else {
-            /*
-             * Start a new connection if doesn't have one already.
-             */
+            // Otherwise send to the corresponding thread to send.
+            // Start a new connection if doesn't have one already.
             BlockingQueue<ByteBuffer> bq = queueSendMap.computeIfAbsent(sid, serverId -> new CircularBlockingQueue<>(SEND_CAPACITY));
             addToSendQueue(bq, b);
             connectOne(sid);
@@ -944,19 +930,23 @@ public class QuorumCnxManager {
         public void run() {
             if (!shutdown) {
                 LOG.debug("Listener thread started, myId: {}", self.getMyId());
-                Set<InetSocketAddress> addresses;
 
+                // Get address of all known peers.
+                Set<InetSocketAddress> addresses;
                 if (self.getQuorumListenOnAllIPs()) {
                     addresses = self.getElectionAddress().getWildcardAddresses();
                 } else {
                     addresses = self.getElectionAddress().getAllAddresses();
                 }
 
+                // Create ListenerHandler for every known peer and using latch
+                // to block current thread until all handlers complete.
                 CountDownLatch latch = new CountDownLatch(addresses.size());
                 listenerHandlers = addresses.stream().map(address ->
                                 new ListenerHandler(address, self.shouldUsePortUnification(), self.isSslQuorum(), latch))
                         .collect(Collectors.toList());
 
+                // Use thread pool to execute handlers.
                 final ExecutorService executor = Executors.newFixedThreadPool(addresses.size());
                 try {
                     listenerHandlers.forEach(executor::submit);
@@ -966,6 +956,7 @@ public class QuorumCnxManager {
                 }
 
                 try {
+                    // Block until all listenerHandlers complete.
                     latch.await();
                 } catch (InterruptedException ie) {
                     LOG.error("Interrupted while sleeping. Ignoring exception", ie);

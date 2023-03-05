@@ -1132,12 +1132,14 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
 
         loadDataBase();
         startServerCnxnFactory();
+
+        // TODO: Would adminServer always be started?
         try {
-            // TODO: adminServer would always be started?
             adminServer.start();
         } catch (AdminServerException e) {
             LOG.warn("Problem starting AdminServer", e);
         }
+
         startLeaderElection();
         startJvmPauseMonitor();
         super.start();
@@ -1210,9 +1212,15 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
         responder.running = false;
         responder.interrupt();
     }
+    
     public synchronized void startLeaderElection() {
         try {
             if (getPeerState() == ServerState.LOOKING) {
+                // Infer from this line of code:
+                //  1. myid would affect the election
+                //  2. zxid from the current host's transaction log would affection the election.
+                //  3. epoch would affect the election.
+                // For all above-mentioned values, the bigger the better.
                 currentVote = new Vote(myid, getLastLoggedZxid(), getCurrentEpoch());
             }
         } catch (IOException e) {
@@ -1346,6 +1354,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
         return new Observer(this, new ObserverZooKeeperServer(logFactory, this, this.zkDb));
     }
 
+    // There is actually one usable election algorithm: fastLeaderElection.
     @SuppressWarnings("deprecation")
     protected Election createElectionAlgorithm(int electionAlgorithm) {
         Election le = null;
@@ -1357,6 +1366,8 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
         case 2:
             throw new UnsupportedOperationException("Election Algorithm 2 is not supported.");
         case 3:
+            // QuorumCnxManager managers all network communication
+            // in the election process with all other peers.
             QuorumCnxManager qcm = createCnxnManager();
             QuorumCnxManager oldQcm = qcmRef.getAndSet(qcm);
             if (oldQcm != null) {
@@ -1365,8 +1376,12 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
             }
             QuorumCnxManager.Listener listener = qcm.listener;
             if (listener != null) {
+                // Start listening on election port.
                 listener.start();
+
                 FastLeaderElection fle = new FastLeaderElection(this, qcm);
+
+                // Start election(exchanging votes).
                 fle.start();
                 le = fle;
             } else {
