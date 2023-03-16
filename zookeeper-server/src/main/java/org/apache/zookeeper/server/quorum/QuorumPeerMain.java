@@ -144,6 +144,7 @@ public class QuorumPeerMain {
         }
     }
 
+    // called when run in ensemble mode.
     public void runFromConfig(QuorumPeerConfig config) throws IOException, AdminServerException {
         try {
             ManagedUtil.registerLog4jMBeans();
