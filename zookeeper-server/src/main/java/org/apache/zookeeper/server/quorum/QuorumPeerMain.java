@@ -43,6 +43,8 @@ import org.apache.zookeeper.util.ServiceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import jline.internal.Log;
+
 /**
  *
  * <h2>Configuration file</h2>
@@ -87,6 +89,13 @@ public class QuorumPeerMain {
      */
     public static void main(String[] args) {
         QuorumPeerMain main = new QuorumPeerMain();
+
+        // Try to observe the initial input.
+        LOG.info("List onfig details for this service");
+        for(String item: args) {
+            System.out.println("    " + item);
+        }
+
         try {
             main.initializeAndRun(args);
         } catch (IllegalArgumentException e) {

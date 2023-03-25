@@ -108,7 +108,6 @@ public class FastLeaderElection implements Election {
      * joined leader election or because it learned of another
      * peer with higher zxid or same zxid and higher server id
      */
-
     public static class Notification {
         /*
          * Format version, introduced in 3.4.6
