@@ -23,10 +23,18 @@
 
 
 # use POSTIX interface, symlink is followed automatically
+
+# Expands the value of `BASH_SOURCE` to `ZOOBIN`, defaults to `$0` if unset. In the end,
+# `ZOOBIN` is the filename of the script being executed.
 ZOOBIN="${BASH_SOURCE-$0}"
+
+# Assign the path of the directory containing the script to `ZOOBIN`.
 ZOOBIN="$(dirname "${ZOOBIN}")"
+
+# Assign the canonicalized absolute pathname of the directory containing the script to `ZOOBINDIR`.
 ZOOBINDIR="$(cd "${ZOOBIN}"; pwd)"
 
+# Try to find and source script file `zkEnv.sh`.
 if [ -e "$ZOOBIN/../libexec/zkEnv.sh" ]; then
   . "$ZOOBINDIR"/../libexec/zkEnv.sh
 else
@@ -75,17 +83,19 @@ else
     ZOOMAIN="org.apache.zookeeper.server.quorum.QuorumPeerMain"
 fi
 
+# Update Server Jvm Flags.
 if [ "x$SERVER_JVMFLAGS" != "x" ]
 then
     JVMFLAGS="$SERVER_JVMFLAGS $JVMFLAGS"
 fi
 
+# Try assign cfg file path to `ZOOCFG`.
 if [ "x$2" != "x" ]
 then
     ZOOCFG="$ZOOCFGDIR/$2"
 fi
 
-# if we give a more complicated path to the config, don't screw around in $ZOOCFGDIR
+# If we give a more complicated path to the config, don't screw around in $ZOOCFGDIR
 if [ "x$(dirname "$ZOOCFG")" != "x$ZOOCFGDIR" ]
 then
     ZOOCFG="$2"
@@ -110,6 +120,8 @@ case "$OSTYPE" in
   GREP=grep
   ;;
 esac
+
+
 ZOO_DATADIR="$($GREP "^[[:space:]]*dataDir" "$ZOOCFG" | sed -e 's/.*=//')"
 ZOO_DATADIR="$(echo -e "${ZOO_DATADIR}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
 ZOO_DATALOGDIR="$($GREP "^[[:space:]]*dataLogDir" "$ZOOCFG" | sed -e 's/.*=//')"

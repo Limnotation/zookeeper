@@ -907,9 +907,7 @@ public class FastLeaderElection implements Election {
             /*
              * Loop in which we exchange notifications until we find a leader
              */
-
-            while ((self.getPeerState() == ServerState.LOOKING) &&
-                    (!stop)){
+            while ((self.getPeerState() == ServerState.LOOKING) && (!stop)) {
                 /*
                  * Remove next notification from queue, times out after 2 times
                  * the termination time

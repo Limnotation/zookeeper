@@ -48,8 +48,7 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements
         RequestProcessor {
     private static final Logger LOG = LoggerFactory.getLogger(SyncRequestProcessor.class);
     private final ZooKeeperServer zks;
-    private final LinkedBlockingQueue<Request> queuedRequests =
-        new LinkedBlockingQueue<Request>();
+    private final LinkedBlockingQueue<Request> queuedRequests = new LinkedBlockingQueue<Request>();
     private final RequestProcessor nextProcessor;
 
     private Thread snapInProcess = null;
@@ -61,7 +60,9 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements
      * invoked after flush returns successfully.
      */
     private final LinkedList<Request> toFlush = new LinkedList<Request>();
+
     private final Random r = new Random();
+
     /**
      * The number of log entries to log before starting a snapshot
      */
@@ -100,10 +101,15 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements
         try {
             int logCount = 0;
 
-            // we do this in an attempt to ensure that not all of the servers
-            // in the ensemble take a snapshot at the same time
+            // We do this in an attempt to ensure that not all of the servers
+            // in the ensemble take a snapshot at the same time.
             int randRoll = r.nextInt(snapCount/2);
+
             while (true) {
+                // If the `toFlush` list is empty, then we block until there are pending requests.
+                // Otherwise, we poll the `queuedRequests` and if the queue is empty, we flush the 
+                // `toFlush` list. In a word, as long as there are pending requests, we will not flush
+                // the `toFlush` list.
                 Request si = null;
                 if (toFlush.isEmpty()) {
                     si = queuedRequests.take();
@@ -114,18 +120,27 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements
                         continue;
                     }
                 }
+
+                // Processor has been shutdown, break to exit the thread.
                 if (si == requestOfDeath) {
                     break;
                 }
+
+                // Handle the pending request.
                 if (si != null) {
-                    // track the number of records written to the log
+                    // Track the number of records written to the log. Do need to note that this
+                    // `append` function only returns true when the transaction is not a readonly
+                    // transaction and it has been successfully appended to the log.
                     if (zks.getZKDatabase().append(si)) {
                         logCount++;
                         if (logCount > (snapCount / 2 + randRoll)) {
+                            // Reset random roll.
                             randRoll = r.nextInt(snapCount/2);
-                            // roll the log
+                            // Roll the log
                             zks.getZKDatabase().rollLog();
-                            // take a snapshot
+
+                            // Try take a snapshot, but will skip if the previous snapshotter
+                            // is still in progress.
                             if (snapInProcess != null && snapInProcess.isAlive()) {
                                 LOG.warn("Too busy to snap, skipping");
                             } else {
@@ -140,6 +155,9 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements
                                     };
                                 snapInProcess.start();
                             }
+
+                            // Reset logCount for next snapshot. However, it seems like this logCount would also
+                            // be set to zero even if the previous snapshotter is still in progress.
                             logCount = 0;
                         }
                     } else if (toFlush.isEmpty()) {
@@ -155,6 +173,10 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements
                         }
                         continue;
                     }
+                    
+                    // If both `queuedRequests` and `toFlush` are not empty, chances are that zk
+                    // service is under heavy load. In this case, we flush the `toFlush` list in
+                    // advance (toFlush.size() > 1000) to eliviates the pressure.
                     toFlush.add(si);
                     if (toFlush.size() > 1000) {
                         flush(toFlush);
@@ -175,6 +197,7 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements
         if (toFlush.isEmpty())
             return;
 
+        // Commit and write messages to disk.
         zks.getZKDatabase().commit();
         while (!toFlush.isEmpty()) {
             Request i = toFlush.remove();

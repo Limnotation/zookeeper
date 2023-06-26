@@ -884,10 +884,14 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
 
     @Override
     public synchronized void start() {
+        // Sanity checks
         if (!getView().containsKey(myid)) {
             throw new RuntimeException("My id " + myid + " not in the peer list");
-         }
+        }
+        
+        // Load data from disk.
         loadDataBase();
+        
         startServerCnxnFactory();
         try {
             adminServer.start();
@@ -948,6 +952,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
         responder.running = false;
         responder.interrupt();
     }
+    
     synchronized public void startLeaderElection() {
        try {
            if (getPeerState() == ServerState.LOOKING) {
@@ -959,9 +964,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
            throw re;
        }
 
-       // if (!getView().containsKey(myid)) {
-      //      throw new RuntimeException("My id " + myid + " not in the peer list");
-        //}
+
         if (electionType == 0) {
             try {
                 udpSocket = new DatagramSocket(getQuorumAddress().getPort());
