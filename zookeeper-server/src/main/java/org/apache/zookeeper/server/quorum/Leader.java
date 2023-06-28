@@ -474,8 +474,7 @@ public class Leader {
 
             leaderStateSummary = new StateSummary(self.getCurrentEpoch(), zk.getLastProcessedZxid());
 
-            // Start thread that waits for connection requests from
-            // new followers.
+            // Start thread that waits for connection requests from new followers.
             cnxAcceptor = new LearnerCnxAcceptor();
             cnxAcceptor.start();
 
@@ -1199,8 +1198,10 @@ public class Leader {
 
         return lastProposed;
     }
+
     // VisibleForTesting
     protected final Set<Long> connectingFollowers = new HashSet<Long>();
+
     public long getEpochToPropose(long sid, long lastAcceptedEpoch) throws InterruptedException, IOException {
         synchronized(connectingFollowers) {
             if (!waitingForNewEpoch) {

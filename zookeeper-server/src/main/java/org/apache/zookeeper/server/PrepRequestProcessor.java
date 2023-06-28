@@ -101,8 +101,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
     }
 
     /**
-     * this is only for testing purposes.
-     * should never be used otherwise
+     * this is only for testing purposes, should never be used otherwise
      */
     private static  boolean failCreate = false;
 
@@ -731,8 +730,6 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
      * @param request
      */
     protected void pRequest(Request request) throws RequestProcessorException {
-        // LOG.info("Prep>>> cxid = " + request.cxid + " type = " +
-        // request.type + " id = 0x" + Long.toHexString(request.sessionId));
         request.setHdr(null);
         request.setTxn(null);
 
