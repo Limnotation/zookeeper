@@ -38,6 +38,7 @@ import org.apache.zookeeper.txn.TxnHeader;
 public class Follower extends Learner{
 
     private long lastQueued;
+
     // This is the same object as this.zk, but we cache the downcast op
     final FollowerZooKeeperServer fzk;
     
@@ -63,6 +64,7 @@ public class Follower extends Learner{
      * @throws InterruptedException
      */
     void followLeader() throws InterruptedException {
+        // Timers.
         self.end_fle = Time.currentElapsedTime();
         long electionTimeTaken = self.end_fle - self.start_fle;
         self.setElectionTimeTaken(electionTimeTaken);
@@ -70,7 +72,10 @@ public class Follower extends Learner{
                 QuorumPeer.FLE_TIME_UNIT);
         self.start_fle = 0;
         self.end_fle = 0;
+
         fzk.registerJMX(new FollowerBean(this, zk), self.jmxLocalPeerBean);
+
+        // Follower constanstly communicate with the leader.
         try {
             QuorumServer leaderServer = findLeader();            
             try {
@@ -78,8 +83,9 @@ public class Follower extends Learner{
                 long newEpochZxid = registerWithLeader(Leader.FOLLOWERINFO);
                 if (self.isReconfigStateChange())
                    throw new Exception("learned about role change");
-                //check to see if the leader zxid is lower than ours
-                //this should never happen but is just a safety check
+
+                // Check to see if the leader zxid is lower than ours
+                // this should never happen but is just a safety check
                 long newEpoch = ZxidUtils.getEpochFromZxid(newEpochZxid);
                 if (newEpoch < self.getAcceptedEpoch()) {
                     LOG.error("Proposed leader epoch " + ZxidUtils.zxidToString(newEpochZxid)
@@ -88,6 +94,8 @@ public class Follower extends Learner{
                 }
                 syncWithLeader(newEpochZxid);                
                 QuorumPacket qp = new QuorumPacket();
+
+                // Keep waiting for leader info until exception occurs.
                 while (this.isRunning()) {
                     readPacket(qp);
                     processPacket(qp);

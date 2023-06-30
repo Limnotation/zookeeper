@@ -1159,8 +1159,8 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
                 Request si = new Request(cnxn, cnxn.getSessionId(), h.getXid(),
                         h.getType(), incomingBuffer, cnxn.getAuthInfo());
                 si.setOwner(ServerCnxn.me);
-                // Always treat packet from the client as a possible
-                // local request.
+
+                // Always treat packet from the client as a possible local request.
                 setLocalSessionFlag(si);
                 submitRequest(si);
             }

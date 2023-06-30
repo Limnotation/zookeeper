@@ -162,7 +162,8 @@ public class NIOServerCnxn extends ServerCnxn {
 
     /** Read the request payload (everything following the length prefix) */
     private void readPayload() throws IOException, InterruptedException {
-        if (incomingBuffer.remaining() != 0) { // have we read length bytes?
+        // have we read length bytes?
+        if (incomingBuffer.remaining() != 0) { 
             int rc = sock.read(incomingBuffer); // sock is non-blocking, so ok
             if (rc < 0) {
                 throw new EndOfStreamException(
@@ -172,7 +173,8 @@ public class NIOServerCnxn extends ServerCnxn {
             }
         }
 
-        if (incomingBuffer.remaining() == 0) { // have we read length bytes?
+        // have we read length bytes?
+        if (incomingBuffer.remaining() == 0) { 
             packetReceived();
             incomingBuffer.flip();
             if (!initialized) {

@@ -451,6 +451,7 @@ public class Leader {
     // when a reconfig occurs where the leader is removed or becomes an observer,
    // it does not commit ops after committing the reconfig
     boolean allowedToCommit = true;
+
     /**
      * This method is main function that is called to lead
      *
@@ -458,6 +459,7 @@ public class Leader {
      * @throws InterruptedException
      */
     void lead() throws IOException, InterruptedException {
+        // Timers.
         self.end_fle = Time.currentElapsedTime();
         long electionTimeTaken = self.end_fle - self.start_fle;
         self.setElectionTimeTaken(electionTimeTaken);
@@ -474,7 +476,7 @@ public class Leader {
 
             leaderStateSummary = new StateSummary(self.getCurrentEpoch(), zk.getLastProcessedZxid());
 
-            // Start thread that waits for connection requests from new followers.
+            // Start thread that waits for connection requests from followers.
             cnxAcceptor = new LearnerCnxAcceptor();
             cnxAcceptor.start();
 

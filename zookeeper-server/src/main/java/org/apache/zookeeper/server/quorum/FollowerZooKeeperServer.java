@@ -65,6 +65,12 @@ public class FollowerZooKeeperServer extends LearnerZooKeeperServer {
         return self.follower;
     }
 
+    /**
+     * Set up request processors for a follower.
+     * For followers, the order of processors is: FollowerRequestProcessor -> CommitProcessor -> FinalRequestProcessor
+     * SyncRequestProcessor will act as a lone processor here instead of being chained with the previous ones.
+     * @throws InterruptedException
+     */
     @Override
     protected void setupRequestProcessors() {
         RequestProcessor finalProcessor = new FinalRequestProcessor(this);

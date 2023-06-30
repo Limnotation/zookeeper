@@ -315,25 +315,22 @@ public class Learner {
      * @throws IOException
      */
     protected long registerWithLeader(int pktType) throws IOException{
-        /*
-         * Send follower info, including last zxid and sid
-         */
+        // Send follower info, including last zxid and sid.
     	long lastLoggedZxid = self.getLastLoggedZxid();
         QuorumPacket qp = new QuorumPacket();                
         qp.setType(pktType);
         qp.setZxid(ZxidUtils.makeZxid(self.getAcceptedEpoch(), 0));
         
-        /*
-         * Add sid to payload
-         */
+        // Add sid to payload, send this payload to leader first.
         LearnerInfo li = new LearnerInfo(self.getId(), 0x10000, self.getQuorumVerifier().getVersion());
         ByteArrayOutputStream bsid = new ByteArrayOutputStream();
         BinaryOutputArchive boa = BinaryOutputArchive.getArchive(bsid);
         boa.writeRecord(li, "LearnerInfo");
         qp.setData(bsid.toByteArray());
-        
         writePacket(qp, true);
-        readPacket(qp);        
+        
+        // 
+        readPacket(qp);     
         final long newEpoch = ZxidUtils.getEpochFromZxid(qp.getZxid());
 		if (qp.getType() == Leader.LEADERINFO) {
         	// we are connected to a 1.0 server so accept the new epoch and read the next packet
@@ -393,9 +390,11 @@ public class Learner {
             }
             else if (qp.getType() == Leader.SNAP) {
                 LOG.info("Getting a snapshot from leader 0x" + Long.toHexString(qp.getZxid()));
+
                 // The leader is going to dump the database
                 // db is clear as part of deserializeSnapshot()
                 zk.getZKDatabase().deserializeSnapshot(leaderIs);
+                
                 // ZOOKEEPER-2819: overwrite config node content extracted
                 // from leader snapshot with local config, to avoid potential
                 // inconsistency of config node content during rolling restart.
@@ -422,8 +421,7 @@ public class Learner {
                 }
                 zk.getZKDatabase().setlastProcessedZxid(qp.getZxid());
 
-            }
-            else {
+            } else {
                 LOG.error("Got unexpected packet from leader: {}, exiting ... ",
                           LearnerHandler.packetToString(qp));
                 System.exit(13);
@@ -570,6 +568,7 @@ public class Learner {
         writePacket(ack, true);
         sock.setSoTimeout(self.tickTime * self.syncLimit);
         zk.startup();
+        
         /*
          * Update the election vote here to ensure that all members of the
          * ensemble report the same vote to new servers that start up and

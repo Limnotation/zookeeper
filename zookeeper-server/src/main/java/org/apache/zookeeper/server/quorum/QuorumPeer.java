@@ -892,6 +892,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
         // Load data from disk.
         loadDataBase();
         
+        // Set up listeners for client connection.
         startServerCnxnFactory();
         try {
             adminServer.start();
@@ -899,7 +900,11 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
             LOG.warn("Problem starting AdminServer", e);
             System.out.println(e);
         }
+
+        // Start leader election.
         startLeaderElection();
+
+        // Call start() of super class.
         super.start();
     }
 
@@ -1173,7 +1178,8 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
 
         try {
             /*
-             * Main loop
+             * Main loop. This loop constantly checks the status of the current node, and determines
+             * which (if any) action should be taken. The main loop only runs while the server is alive.
              */
             while (running) {
                 switch (getPeerState()) {
@@ -1231,7 +1237,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
                             if (shuttingDownLE) {
                                shuttingDownLE = false;
                                startLeaderElection();
-                               }
+                            }
                             setCurrentVote(makeLEStrategy().lookForLeader());
                         } catch (Exception e) {
                             LOG.warn("Unexpected exception", e);
@@ -1254,7 +1260,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
                     break;
                 case FOLLOWING:
                     try {
-                       LOG.info("FOLLOWING");
+                        LOG.info("FOLLOWING");
                         setFollower(makeFollower(logFactory));
                         follower.followLeader();
                     } catch (Exception e) {

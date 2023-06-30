@@ -225,8 +225,10 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
 
         private void select() {
             try {
+                // Block waiting for arrival of registered events.
                 selector.select();
 
+                // Iterate over the set of keys for which events are available.
                 Iterator<SelectionKey> selectedKeys =
                     selector.selectedKeys().iterator();
                 while (!stopped && selectedKeys.hasNext()) {
@@ -457,8 +459,7 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
             IOWorkRequest workRequest = new IOWorkRequest(this, key);
             NIOServerCnxn cnxn = (NIOServerCnxn) key.attachment();
 
-            // Stop selecting this key while processing on its
-            // connection
+            // Stop selecting this key while processing on its connection.
             cnxn.disableSelectable();
             key.interestOps(0);
             touchCnxn(cnxn);

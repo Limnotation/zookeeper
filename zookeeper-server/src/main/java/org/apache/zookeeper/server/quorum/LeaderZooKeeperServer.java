@@ -61,6 +61,11 @@ public class LeaderZooKeeperServer extends QuorumZooKeeperServer {
         return self.leader;
     }
 
+    /**
+     * Set up request processors for a leader.
+     * For a leader, the order of request processors is: 
+     *      LeaderRequestProcessor -> PrepRequestProcessor -> ProposalRequestProcessor -> CommitProcessor -> ToBeAppliedRequestProcessor -> FinalRequestProcessor
+    */
     @Override
     protected void setupRequestProcessors() {
         RequestProcessor finalProcessor = new FinalRequestProcessor(this);
