@@ -44,8 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Interface to a Server connection - represents a connection from a client
- * to the server.
+ * Interface to a Server connection - represents a connection from a client to the server.
  */
 public abstract class ServerCnxn implements Stats, Watcher {
     // This is just an arbitrary object to represent requests issued by

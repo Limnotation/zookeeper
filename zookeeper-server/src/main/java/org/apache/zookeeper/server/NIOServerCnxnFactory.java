@@ -68,6 +68,7 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
     /** Default sessionless connection timeout in ms: 10000 (10s) */
     public static final String ZOOKEEPER_NIO_SESSIONLESS_CNXN_TIMEOUT =
         "zookeeper.nio.sessionlessCnxnTimeout";
+
     /**
      * With 500 connections to an observer with watchers firing on each, is
      * unable to exceed 1GigE rates with only 1 selector.
@@ -76,12 +77,15 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
      */
     public static final String ZOOKEEPER_NIO_NUM_SELECTOR_THREADS =
         "zookeeper.nio.numSelectorThreads";
+
     /** Default: 2 * numCores */
     public static final String ZOOKEEPER_NIO_NUM_WORKER_THREADS =
         "zookeeper.nio.numWorkerThreads";
+
     /** Default: 64kB */
     public static final String ZOOKEEPER_NIO_DIRECT_BUFFER_BYTES =
         "zookeeper.nio.directBufferBytes";
+
     /** Default worker pool shutdown timeout in ms: 5000 (5s) */
     public static final String ZOOKEEPER_NIO_SHUTDOWN_TIMEOUT =
         "zookeeper.nio.shutdownTimeout";
@@ -178,6 +182,8 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
      * them across the SelectorThreads. It enforces maximum number of
      * connections per IP and attempts to cope with running out of file
      * descriptors by briefly sleeping before retrying.
+     * 
+     * AcceptThread blocks on `ACCEPT` events only.
      */
     private class AcceptThread extends AbstractSelectThread {
         private final ServerSocketChannel acceptSocket;

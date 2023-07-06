@@ -140,6 +140,7 @@ public class QuorumPeerMain {
 
       LOG.info("Starting quorum peer, myid=" + config.getServerId());
       try {
+          // Set up client listeners.
           ServerCnxnFactory cnxnFactory = null;
           ServerCnxnFactory secureCnxnFactory = null;
 
@@ -157,7 +158,6 @@ public class QuorumPeerMain {
                       true);
           }
 
-          // quorumPeer manages the quorum view.
           quorumPeer = getQuorumPeer();
           quorumPeer.setTxnFactory(new FileTxnSnapLog(
                       config.getDataLogDir(),

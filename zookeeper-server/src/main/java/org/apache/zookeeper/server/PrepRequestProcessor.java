@@ -733,6 +733,11 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
         request.setHdr(null);
         request.setTxn(null);
 
+        /**
+         * For requests that might change the state of the Zookeeper system, the zxid of the zookeeper node
+         * would increase by 1 and assigned to the transaction created from the request. This can be observed
+         * from the code below where `getNextZxid()` is called.
+        */
         try {
             switch (request.type) {
             case OpCode.createContainer:

@@ -50,8 +50,6 @@ import org.slf4j.LoggerFactory;
  * finalizeWait determines the amount of time to wait until deciding upon a leader.
  * This is part of the leader election algorithm.
  */
-
-
 public class FastLeaderElection implements Election {
     private static final Logger LOG = LoggerFactory.getLogger(FastLeaderElection.class);
 
@@ -191,7 +189,10 @@ public class FastLeaderElection implements Election {
         long peerEpoch;
     }
 
+    // Queue that stores messages waiting to be sent to peers.
     LinkedBlockingQueue<ToSend> sendqueue;
+
+    // Queue that stores messages received from peers.
     LinkedBlockingQueue<Notification> recvqueue;
 
     /**
@@ -207,7 +208,6 @@ public class FastLeaderElection implements Election {
          * Receives messages from instance of QuorumCnxManager on
          * method run(), and processes such messages.
          */
-
         class WorkerReceiver extends ZooKeeperThread  {
             volatile boolean stop;
             QuorumCnxManager manager;
@@ -219,7 +219,6 @@ public class FastLeaderElection implements Election {
             }
 
             public void run() {
-
                 Message response;
                 while (!stop) {
                     // Sleeps on receive
@@ -378,9 +377,8 @@ public class FastLeaderElection implements Election {
                             n.peerEpoch = rpeerepoch;
                             n.version = version;
                             n.qv = rqv;
-                            /*
-                             * Print notification info
-                             */
+                           
+                            // Print notification info
                             if(LOG.isInfoEnabled()){
                                 printNotification(n);
                             }
@@ -451,10 +449,8 @@ public class FastLeaderElection implements Election {
         }
 
         /**
-         * This worker simply dequeues a message to send and
-         * and queues it on the manager's queue.
+         * This worker simply dequeues a message to send and and queues it on the manager's queue.
          */
-
         class WorkerSender extends ZooKeeperThread {
             volatile boolean stop;
             QuorumCnxManager manager;

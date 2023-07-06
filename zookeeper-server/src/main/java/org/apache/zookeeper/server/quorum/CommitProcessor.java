@@ -91,6 +91,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
     /** Request for which we are currently awaiting a commit */
     protected final AtomicReference<Request> nextPending =
         new AtomicReference<Request>();
+        
     /** Request currently being committed (ie, sent off to next processor) */
     private final AtomicReference<Request> currentlyCommitting =
         new AtomicReference<Request>();

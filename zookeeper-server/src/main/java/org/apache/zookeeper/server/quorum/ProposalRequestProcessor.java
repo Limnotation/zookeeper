@@ -26,8 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This RequestProcessor simply forwards requests to an AckRequestProcessor and
- * SyncRequestProcessor.
+ * This RequestProcessor simply forwards requests to an AckRequestProcessor and SyncRequestProcessor.
  */
 public class ProposalRequestProcessor implements RequestProcessor {
     private static final Logger LOG =

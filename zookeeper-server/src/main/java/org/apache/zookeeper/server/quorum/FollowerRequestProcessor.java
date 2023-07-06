@@ -32,8 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This RequestProcessor forwards any requests that modify the state of the
- * system to the Leader.
+ * This RequestProcessor forwards any requests that modify the state of the system to the Leader.
  */
 public class FollowerRequestProcessor extends ZooKeeperCriticalThread implements
         RequestProcessor {

@@ -81,7 +81,6 @@ import org.slf4j.LoggerFactory;
  * when consolidating peer communication. This is to be verified, though.
  *
  */
-
 public class QuorumCnxManager {
     private static final Logger LOG = LoggerFactory.getLogger(QuorumCnxManager.class);
 
@@ -568,8 +567,9 @@ public class QuorumCnxManager {
         InetSocketAddress electionAddr = null;
 
         try {
+            // Read sid(server id) from the input stream.
             protocolVersion = din.readLong();
-            if (protocolVersion >= 0) { // this is a server id and not a protocol version
+            if (protocolVersion >= 0) {
                 sid = protocolVersion;
             } else {
                 try {
@@ -599,7 +599,10 @@ public class QuorumCnxManager {
 
         // do authenticating learner
         authServer.authenticate(sock, din);
-        //If wins the challenge, then close the new connection.
+
+        // If wins the challenge, then close the new connection. So in Zookeeper, only
+        // allow server with larger sid to connect to server with smaller sid on election
+        // port (i.e. electionAddr) but not the other way around.
         if (sid < self.getId()) {
             /*
              * This replica might still believe that the connection to sid is
@@ -626,7 +629,8 @@ public class QuorumCnxManager {
             // we saw this case in ZOOKEEPER-2164
             LOG.warn("We got a connection request from a server with our own ID. "
                     + "This should be either a configuration error, or a bug.");
-        } else { // Otherwise start worker threads to receive data.
+        } else { 
+            // Otherwise start worker threads to receive data.
             SendWorker sw = new SendWorker(sock, sid);
             RecvWorker rw = new RecvWorker(sock, din, sid, sw);
             sw.setRecv(rw);
@@ -652,29 +656,22 @@ public class QuorumCnxManager {
      * only leader election uses it.
      */
     public void toSend(Long sid, ByteBuffer b) {
-        /*
-         * If sending message to myself, then simply enqueue it (loopback).
-         */
         if (this.mySid == sid) {
+            // If sending message to myself, then simply enqueue it (loopback).
              b.position(0);
              addToRecvQueue(new Message(b.duplicate(), sid));
-            /*
-             * Otherwise send to the corresponding thread to send.
-             */
         } else {
-             /*
-              * Start a new connection if doesn't have one already.
-              */
-             ArrayBlockingQueue<ByteBuffer> bq = new ArrayBlockingQueue<ByteBuffer>(
-                SEND_CAPACITY);
-             ArrayBlockingQueue<ByteBuffer> oldq = queueSendMap.putIfAbsent(sid, bq);
-             if (oldq != null) {
-                 addToSendQueue(oldq, b);
-             } else {
-                 addToSendQueue(bq, b);
-             }
-             connectOne(sid);
-
+            // Otherwise send to the corresponding thread to send.
+            // Start a new connection if doesn't have one already.
+            ArrayBlockingQueue<ByteBuffer> bq = new ArrayBlockingQueue<ByteBuffer>(
+            SEND_CAPACITY);
+            ArrayBlockingQueue<ByteBuffer> oldq = queueSendMap.putIfAbsent(sid, bq);
+            if (oldq != null) {
+                addToSendQueue(oldq, b);
+            } else {
+                addToSendQueue(bq, b);
+            }
+            connectOne(sid);
         }
     }
 
@@ -708,6 +705,7 @@ public class QuorumCnxManager {
             LOG.debug("There is a connection already for server " + sid);
             return;
         }
+
         synchronized (self.QV_LOCK) {
             boolean knownId = false;
             // Resolve hostname for the remote server before attempting to
@@ -1018,6 +1016,10 @@ public class QuorumCnxManager {
      * Thread to send messages. Instance waits on a queue, and send a message as
      * soon as there is one available. If connection breaks, then opens a new
      * one.
+     * 
+     * Assume that there n servers in a zookeeper ensemble. Then, for each server
+     * there will be n-1 SendWorker threads, each of which will be responsible for
+     * sending messages to the rest n-1 servers for the current server.
      */
     class SendWorker extends ZooKeeperThread {
         Long sid;
@@ -1131,6 +1133,7 @@ public class QuorumCnxManager {
                 LOG.error("Failed to send last message. Shutting down thread.", e);
                 this.finish();
             }
+
             LOG.debug("SendWorker thread started towards {}. myId: {}", sid, QuorumCnxManager.this.mySid);
             try {
                 while (running && !shutdown && sock != null) {
@@ -1220,8 +1223,7 @@ public class QuorumCnxManager {
                 LOG.debug("RecvWorker thread towards {} started. myId: {}", sid, QuorumCnxManager.this.mySid);
                 while (running && !shutdown && sock != null) {
                     /**
-                     * Reads the first int to determine the length of the
-                     * message
+                     * Reads the first int to determine the length of the message
                      */
                     int length = din.readInt();
                     if (length <= 0 || length > PACKETMAXSIZE) {
@@ -1229,6 +1231,7 @@ public class QuorumCnxManager {
                                 "Received packet with invalid packet: "
                                         + length);
                     }
+
                     /**
                      * Allocates a new ByteBuffer to receive the message
                      */
