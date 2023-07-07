@@ -149,13 +149,17 @@ public class QuorumCnxManager {
     /*
      * Mapping from Peer to Thread number
      */
+
+    // senderWorkerMap keeps mapping from sid to corresponding SendWorker thread.
     final ConcurrentHashMap<Long, SendWorker> senderWorkerMap;
+
+    // queueSendMap keeps mapping from remote sid to the queue that contains messages to send to that sid.
     final ConcurrentHashMap<Long, BlockingQueue<ByteBuffer>> queueSendMap;
+
+    // lastMessageSent keeps mapping from sid to the last message that has been sent to that sid.
     final ConcurrentHashMap<Long, ByteBuffer> lastMessageSent;
 
-    /*
-     * Reception queue
-     */
+    // Reception queue, stores all messages received from peers(include itself).
     public final BlockingQueue<Message> recvQueue;
 
     /*
@@ -1143,8 +1147,16 @@ public class QuorumCnxManager {
      * one.
      */
     class SendWorker extends ZooKeeperThread {
-
+        // Each SendWorker has an associated remote peer server id. This sid is used
+        // to retrieve the corresponding blocking queue from queueSendMap. This also
+        // indicates following facts:
+        //  1) There is a SendWorker thread for each peer server. n servers in one
+        //     zookeeper ensemble means each server will have n-1 SendWorker threads.
+        //  2) Each SendWorker thread is dedicated to send messages to one peer, and
+        //     this relationship is confirmed by sid. So there will be n-1 send queues
+        //     (stored in `queueSendMap`) to store messages to be sent to each peer.
         Long sid;
+
         Socket sock;
         RecvWorker recvWorker;
         volatile boolean running = true;
@@ -1325,7 +1337,13 @@ public class QuorumCnxManager {
      * channel breaks, then removes itself from the pool of receivers.
      */
     class RecvWorker extends ZooKeeperThread {
-
+        // Each RecvWorker has an associated remote peer server id.
+        //  1) There is a RecvWorker thread for each peer server. n servers in one
+        //     zookeeper ensemble means each server will have n-1 RecvWorker threads.
+        //  2) Each RecvWorker thread is dedicated to receive messages from one peer,
+        //     this relationship is confirmed by sid. For one zookeeper ensemble member
+        //     it only needs one queue to store all incoming messages from other peers
+        //     (including itself), in this case, `recvQueue` does the job.
         Long sid;
         Socket sock;
         volatile boolean running = true;

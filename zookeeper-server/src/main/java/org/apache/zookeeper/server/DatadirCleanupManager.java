@@ -92,10 +92,12 @@ public class DatadirCleanupManager {
      * @see PurgeTxnLog#purge(File, File, int)
      */
     public void start() {
+        // Don't start the purge task if it is already running.
         if (PurgeTaskStatus.STARTED == purgeTaskStatus) {
             LOG.warn("Purge task is already running.");
             return;
         }
+
         // Don't schedule the purge task with zero or negative purge interval.
         if (purgeInterval <= 0) {
             LOG.info("Purge task is not scheduled.");

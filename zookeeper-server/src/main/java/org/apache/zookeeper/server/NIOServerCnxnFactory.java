@@ -445,11 +445,12 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
             IOWorkRequest workRequest = new IOWorkRequest(this, key);
             NIOServerCnxn cnxn = (NIOServerCnxn) key.attachment();
 
-            // Stop selecting this key while processing on its
-            // connection
+            // Stop selecting this key while processing on its connection
             cnxn.disableSelectable(); 
             key.interestOps(0);
             touchCnxn(cnxn);
+
+            // Dispatch I/O workRequest to the workerPool to run.
             workerPool.schedule(workRequest);
         }
 
@@ -657,6 +658,7 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
 
         // 32 cores sweet spot seems to be 64 worker threads.
         numWorkerThreads = Integer.getInteger(ZOOKEEPER_NIO_NUM_WORKER_THREADS, 2 * numCores);
+
         workerShutdownTimeoutMS = Long.getLong(ZOOKEEPER_NIO_SHUTDOWN_TIMEOUT, 5000);
 
         String logMsg = "Configuring NIO connection handler with "
@@ -739,10 +741,7 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
     public void start() {
         stopped = false;
 
-        // This function starts all kinds of working threads
-        // from bottom to top.
-
-        // Create worker thread pool and start all threads.
+        // Create worker thread pool.
         if (workerPool == null) {
             workerPool = new WorkerService("NIOWorker", numWorkerThreads, false);
         }

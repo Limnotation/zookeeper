@@ -1129,22 +1129,31 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
 
     @Override
     public synchronized void start() {
+        // Sanity check.
         if (!getView().containsKey(myid)) {
             throw new RuntimeException("My id " + myid + " not in the peer list");
         }
 
+        // Load Database from disk.
         loadDataBase();
+
+        // Start client connection listeners.
         startServerCnxnFactory();
 
-        // TODO: Would adminServer always be started?
+        // Start admin server.
         try {
             adminServer.start();
         } catch (AdminServerException e) {
             LOG.warn("Problem starting AdminServer", e);
         }
 
+        // Start leader election.
         startLeaderElection();
+
+        // Start JVM pause monitor.
         startJvmPauseMonitor();
+
+        // Start main thread for QuorumPeer.
         super.start();
     }
 

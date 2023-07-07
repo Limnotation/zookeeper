@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.zookeeper.server.quorum;
+package org.apache.zookeeper.server;
 
 import static org.apache.zookeeper.test.ClientBase.CONNECTION_TIMEOUT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,6 +27,7 @@ import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.ZooKeeper.States;
 import org.apache.zookeeper.server.ServerMetrics;
+import org.apache.zookeeper.server.quorum.FollowerRequestProcessor;
 import org.apache.zookeeper.server.util.PortForwarder;
 import org.apache.zookeeper.test.ClientBase;
 import org.apache.zookeeper.test.ObserverMasterTestBase;

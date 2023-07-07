@@ -209,7 +209,6 @@ public class FastLeaderElection implements Election {
      * functionality of each is obvious from the name. Each of these
      * spawns a new thread.
      */
-
     protected class Messenger {
 
         /**

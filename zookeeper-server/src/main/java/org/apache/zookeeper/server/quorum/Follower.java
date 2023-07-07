@@ -70,6 +70,7 @@ public class Follower extends Learner {
      * @throws InterruptedException
      */
     void followLeader() throws InterruptedException {
+        // Check time for the election time taken.
         self.end_fle = Time.currentElapsedTime();
         long electionTimeTaken = self.end_fle - self.start_fle;
         self.setElectionTimeTaken(electionTimeTaken);
@@ -77,6 +78,7 @@ public class Follower extends Learner {
         LOG.info("FOLLOWING - LEADER ELECTION TOOK - {} {}", electionTimeTaken, QuorumPeer.FLE_TIME_UNIT);
         self.start_fle = 0;
         self.end_fle = 0;
+
         fzk.registerJMX(new FollowerBean(this, zk), self.jmxLocalPeerBean);
 
         long connectionTime = 0;
@@ -92,6 +94,7 @@ public class Follower extends Learner {
                 if (self.isReconfigStateChange()) {
                     throw new Exception("learned about role change");
                 }
+
                 //check to see if the leader zxid is lower than ours
                 //this should never happen but is just a safety check
                 long newEpoch = ZxidUtils.getEpochFromZxid(newEpochZxid);
@@ -102,6 +105,7 @@ public class Follower extends Learner {
                               + ZxidUtils.zxidToString(self.getAcceptedEpoch()));
                     throw new IOException("Error: Epoch of leader is lower");
                 }
+                
                 long startTime = Time.currentElapsedTime();
                 self.setLeaderAddressAndId(leaderServer.addr, leaderServer.getId());
                 self.setZabState(QuorumPeer.ZabState.SYNCHRONIZATION);
