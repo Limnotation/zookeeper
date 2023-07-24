@@ -549,7 +549,7 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
     }
 
     /**
-     * This thread is responsible for closing sta
+     * This thread is responsible for closing stale
      * connections on which no session is established are properly expired.
      */
     private class ConnectionExpirerThread extends ZooKeeperThread {
@@ -648,7 +648,8 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
         // Get the number of cores of the JVM.
         int numCores = Runtime.getRuntime().availableProcessors();
 
-        // 32 cores sweet spot seems to be 4 selector threads
+        // 32 cores sweet spot seems to be 4 selector threads, and number of 
+        // selector threads cannot be less than 1.
         numSelectorThreads = Integer.getInteger(
             ZOOKEEPER_NIO_NUM_SELECTOR_THREADS,
             Math.max((int) Math.sqrt((float) numCores / 2), 1));
@@ -656,7 +657,8 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
             throw new IOException("numSelectorThreads must be at least 1");
         }
 
-        // 32 cores sweet spot seems to be 64 worker threads.
+        // 32 cores sweet spot seems to be 64 worker threads, and the number of 
+        // worker threads can be 0 in the initialization process.
         numWorkerThreads = Integer.getInteger(ZOOKEEPER_NIO_NUM_WORKER_THREADS, 2 * numCores);
 
         workerShutdownTimeoutMS = Long.getLong(ZOOKEEPER_NIO_SHUTDOWN_TIMEOUT, 5000);
@@ -747,7 +749,7 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
         }
 
         // Start all selector threads. They will select connections
-        // from a queue and pass them to worker threads.
+        // from a queue and assign them to worker threads.
         for (SelectorThread thread : selectorThreads) {
             if (thread.getState() == Thread.State.NEW) {
                 thread.start();

@@ -163,7 +163,7 @@ public class QuorumPeerMain {
 
         LOG.info("Starting quorum peer, myid=" + config.getServerId());
 
-        // Create metrics provider. DO note that this is only possible after version 3.6.0
+        // Create metrics provider. DO note that this is only possible after version 3.6.0.
         final MetricsProvider metricsProvider;
         try {
             metricsProvider = MetricsProviderBootstrap.startMetricsProvider(
@@ -201,7 +201,6 @@ public class QuorumPeerMain {
 
             quorumPeer.enableLocalSessions(config.areLocalSessionsEnabled());
             quorumPeer.enableLocalSessionsUpgrading(config.isLocalSessionsUpgradingEnabled());
-            //quorumPeer.setQuorumPeers(config.getAllMembers());
             quorumPeer.setElectionType(config.getElectionAlg());
             quorumPeer.setMyid(config.getServerId());
             quorumPeer.setTickTime(config.getTickTime());

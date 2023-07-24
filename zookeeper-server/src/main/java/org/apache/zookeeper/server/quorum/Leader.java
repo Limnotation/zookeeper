@@ -598,8 +598,7 @@ public class Leader extends LearnerMaster {
 
             leaderStateSummary = new StateSummary(self.getCurrentEpoch(), zk.getLastProcessedZxid());
 
-            // Start thread that waits for connection requests from
-            // new followers.
+            // Start thread that waits for connection requests from new followers.
             cnxAcceptor = new LearnerCnxAcceptor();
             cnxAcceptor.start();
 

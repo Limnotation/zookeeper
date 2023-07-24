@@ -133,6 +133,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements Req
     public static void setFailCreate(boolean b) {
         failCreate = b;
     }
+    
     @Override
     public void run() {
         LOG.info(String.format("PrepRequestProcessor (sid:%d) started, reconfigEnabled=%s", zks.getServerId(), zks.reconfigEnabled));
@@ -763,7 +764,9 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements Req
     }
 
     /**
-     * This method is a helper to pRequest method
+     * This method is a helper to pRequest method.
+     * 
+     * Requests that might change the state of the system will cause the zxid to increase.
      */
     private void pRequestHelper(Request request) {
         try {

@@ -1161,7 +1161,8 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
         try {
             zkDb.loadDataBase();
 
-            // load the epochs
+            // load the epoch from database, then do a comparison with the epoch in
+            // the `current epoch file`.
             long lastProcessedZxid = zkDb.getDataTree().lastProcessedZxid;
             long epochOfZxid = ZxidUtils.getEpochFromZxid(lastProcessedZxid);
             try {
@@ -1229,10 +1230,10 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
         try {
             if (getPeerState() == ServerState.LOOKING) {
                 // Infer from this line of code:
-                //  1. myid would affect the election
-                //  2. zxid from the current host's transaction log would affection the election.
+                //  1. myid would affect the election, uasually the larger the better.
+                //  2. zxid from the current host's transaction log would affect the election.
                 //  3. epoch would affect the election.
-                // For all above-mentioned values, the bigger the better.
+                // For all above-mentioned values, the larger the better.
                 currentVote = new Vote(myid, getLastLoggedZxid(), getCurrentEpoch());
             }
         } catch (IOException e) {
@@ -1378,8 +1379,8 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
         case 2:
             throw new UnsupportedOperationException("Election Algorithm 2 is not supported.");
         case 3:
-            // QuorumCnxManager managers all network communication
-            // in the election process with all other peers.
+            // QuorumCnxManager managers all network communication in the election process with all other peers.
+            // In this case, Election is at the application layer and QuorumCnxManager is at the transport layer.
             QuorumCnxManager qcm = createCnxnManager();
             QuorumCnxManager oldQcm = qcmRef.getAndSet(qcm);
             if (oldQcm != null) {
@@ -1391,6 +1392,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
                 // Start listening on election port.
                 listener.start();
 
+                // Create leader election thread.
                 FastLeaderElection fle = new FastLeaderElection(this, qcm);
 
                 // Start election(exchanging votes).
